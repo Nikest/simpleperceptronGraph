@@ -9,9 +9,34 @@
         canvas {
             border: 1px solid #000;
         }
+        .lineGraph {
+            display: inline-block;
+            width: 50px;
+            height: 2px;
+            background: #4287f5;
+        }
+        .predictGraph {
+            display: inline-block;
+            width: 50px;
+            height: 2px;
+            background: #ff00ba;
+        }
+        .data {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: #26bf00;
+        }
     </style>
 </head>
 <body>
+Legend:
+<div><span class="lineGraph"></span> : graph</div>
+<div><span class="data"></span> : data points</div>
+<div><span class="predictGraph"></span> : network predict graph</div>
+<br>
+<br>
+
 <canvas id="canvas" width="500" height="500"></canvas>
 <br>
 <button id="trainButton">Start training</button>
@@ -152,8 +177,6 @@
     function drawFromPerceptron() {
         const yArr = xT.map(x => perceptron.activate([x / 10, x / 10])[0] * 10);
         const yNext = xTGraph.map(x => perceptron.activate([x / 10, x / 10])[0] * 10);
-
-        drawByEach(xT, yArr, '#bf0000', 6);
         drawByEach(xTGraph, yNext, '#ff00ba', 2);
     }
 
