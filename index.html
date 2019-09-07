@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Tensor</title>
+    <script src="synaptic.js"></script>
+    <script src="synaptic-network.js"></script>
+    <style>
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas" width="500" height="500"></canvas>
+<br>
+<button id="trainButton">Start training</button>
+<button id="stopTrainButton">Stop training</button>
+<div id="trainingLog">---</div>
+<br><br>
+<div>
+    <b>Put training data set:</b>
+    <br>
+    <span>little data: </span>
+    <input type="radio" name="dataset" id="littleData">
+    <br>
+    <span>medium data: </span>
+    <input type="radio" name="dataset" id="mediumData" checked>
+    <br>
+    <span>big data: </span>
+    <input type="radio" name="dataset" id="bigData">
+</div>
+<br><br>
+<div>
+    <b>Network property:</b>
+    <br>
+    <span>Input neuron layer</span>
+    <input type="number" disabled value="2">
+    <br>
+    <span>Hidden neuron layer</span>
+    <input type="number" value="4" id="hiddenNeurons">
+    <br>
+    <span>Output neuron layer</span>
+    <input type="number" disabled value="1">
+    <br><br>
+    <button id="rebuild">Rebuild network</button>
+</div>
+</body>
+<script>
+    // elements
+    const trainLog = document.getElementById('trainingLog');
+    document.getElementById('trainButton').addEventListener('click', () => {doTrain = true; doTrainingInterval()});
+    document.getElementById('stopTrainButton').addEventListener('click', () => doTrain = false);
+    document.getElementById('rebuild').addEventListener('click', () => {
+        doTrain = false;
+        ctx.clearRect(0, 0, 500, 500);
+        drawByEach(xT, yT, '#26bf00', 6);
+        drawGraph(logArray, "#4287f5");
+        buildNetwork(document.getElementById('hiddenNeurons').value)
+    });
+    document.getElementById('littleData').addEventListener('focus', () => {
+        prepareDataTraining(littleDataTraining);
+        buildNetwork(document.getElementById('hiddenNeurons').value)
+    });
+    document.getElementById('mediumData').addEventListener('focus', () => {
+        prepareDataTraining(middleDataTraining);
+        buildNetwork(document.getElementById('hiddenNeurons').value);
+    });
+    document.getElementById('bigData').addEventListener('focus', () => {
+        prepareDataTraining(bigDataTraining);
+        buildNetwork(document.getElementById('hiddenNeurons').value);
+    });
+    const ctx = document.getElementById('canvas').getContext('2d');
+
+    // dataset
+    const logArray = (new Array(500)).fill(0).map((e, i) => (i - 250) / 100);
+    const logArrayY = logArray.map(x => yGen(x * 100));
+    const xTGraph = logArray.map(c => c + 2.5);
+
+    const littleDataTraining = [1, 104, 250, 300, 498];
+    const middleDataTraining = [1, 123, 189, 245, 349, 432, 499];
+    const bigDataTraining = [1, 50, 78, 98, 105, 125, 147, 203, 222, 250, 287, 350, 400, 432, 492];
+
+    let xT = [];
+    let yT = [];
+
+    //functions helper
+    function yGen(a) {
+        return (a * (a / 150))
+    }
+
+    function drawGraph(array, color, size) {
+        ctx.fillStyle = color;
+        array.forEach((x, i) => ctx.fillRect(x * 100 + 250, logArrayY[i], 2, 2));
+    }
+
+    drawGraph(logArray, "#4287f5");
+
+    function prepareDataTraining(dataArray) {
+        xT = dataArray.map(c => logArray[c] + 2.5);
+        yT = dataArray.map(c => logArrayY[c] / 100);
+        ctx.clearRect(0, 0, 500, 500);
+        drawByEach(xT, yT, '#26bf00', 6);
+        drawGraph(logArray, "#4287f5");
+    }
+
+    function drawByEach(x, y, color, size) {
+        ctx.fillStyle = color;
+        x.forEach((xE, i) => ctx.fillRect(xE * 100, y[i] * 100, size, size));
+    }
+
+    //inits
+    buildNetwork(4);
+    drawGraph(logArray, "#4287f5");
+    prepareDataTraining(middleDataTraining);
+
+    // training
+    const learningRate = .01;
+    const trainingSet = xT.map((x, i) => {
+        return {
+            input: [x / 10, x / 10],
+            output: [yT[i] / 10]
+        }
+    });
+
+    let doTrain = true;
+    let iterations = 0;
+    function doTrainingInterval() {
+        setTimeout(() => {
+            trainer.train(trainingSet, {
+                rate: .01,
+                iterations: 10000,
+                error: .000000005,
+                shuffle: true
+            });
+
+            ctx.clearRect(0, 0, 500, 500);
+            drawByEach(xT, yT, '#26bf00', 6);
+            drawGraph(logArray, "#4287f5");
+            drawFromPerceptron();
+
+            iterations += 10000;
+            trainLog.innerHTML = `Train iterations: ${iterations}`;
+
+            if(doTrain) {
+                doTrainingInterval()
+            }
+
+        }, 250);
+    }
+
+    function drawFromPerceptron() {
+        const yArr = xT.map(x => perceptron.activate([x / 10, x / 10])[0] * 10);
+        const yNext = xTGraph.map(x => perceptron.activate([x / 10, x / 10])[0] * 10);
+
+        drawByEach(xT, yArr, '#bf0000', 6);
+        drawByEach(xTGraph, yNext, '#ff00ba', 2);
+    }
+
+</script>
+</html>
